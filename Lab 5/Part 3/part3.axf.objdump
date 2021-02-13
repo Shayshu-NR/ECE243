@@ -1,0 +1,183 @@
+
+D:/ECE243/Lab 5/Part 3/part3.axf:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+00000000 <__cs3_interrupt_vector>:
+          .text                   // executable code follows
+          .global _start
+		  
+_start:		LDR R8, =0xFF200020		//R8 has the addres of HEX0-3
+   0:	e59f8114 	ldr	r8, [pc, #276]	; 11c <DISPLAY_NUMS+0x28>
+			LDR	R9, =0xFFFFFFFF		//Used to reset the edge capture
+   4:	e3e09000 	mvn	r9, #0
+			STR R9, [R8, #0x3C]
+   8:	e588903c 	str	r9, [r8, #60]	; 0x3c
+			MOV R10, #DISPLAY_NUMS	//Bit codes for the hex display
+   c:	e3a0a0f4 	mov	r10, #244	; 0xf4
+			LDR R11, =0xFFFEC600		//Addr of internal timer
+  10:	e59fb108 	ldr	r11, [pc, #264]	; 120 <DISPLAY_NUMS+0x2c>
+			MOV R12, #1
+  14:	e3a0c001 	mov	r12, #1
+			STR R12, [R11, #0xC]
+  18:	e58bc00c 	str	r12, [r11, #12]
+			MOV R12, #0
+  1c:	e3a0c000 	mov	r12, #0
+			STR R12, [R11, #0x8]
+  20:	e58bc008 	str	r12, [r11, #8]
+			LDR R12, =0x02FAF080	//0.25 seconds at 200MHz
+  24:	e59fc0f8 	ldr	r12, [pc, #248]	; 124 <DISPLAY_NUMS+0x30>
+			STR R12, [R11]			//Puts load value into timer
+  28:	e58bc000 	str	r12, [r11]
+			MOV R0, #0
+  2c:	e3a00000 	mov	r0, #0
+			MOV R1, #0
+  30:	e3a01000 	mov	r1, #0
+
+00000034 <MAIN>:
+			
+//Increments the hex display with a start/stop button		
+MAIN:		LDR R2, [R8, #0x3C]		//Saves key value
+  34:	e598203c 	ldr	r2, [r8, #60]	; 0x3c
+			CMP R2, #0
+  38:	e3520000 	cmp	r2, #0
+			BEQ	MAIN
+  3c:	0afffffc 	beq	34 <MAIN>
+			STR R9, [R8, #0x3C]
+  40:	e588903c 	str	r9, [r8, #60]	; 0x3c
+
+00000044 <INC>:
+			
+INC:		BL COUNTER
+  44:	eb000004 	bl	5c <COUNTER>
+			PUSH {R0, R1}
+  48:	e92d0003 	push	{r0, r1}
+			BL DELAY
+  4c:	eb00000d 	bl	88 <DELAY>
+			POP {R0, R1}
+  50:	e8bd0003 	pop	{r0, r1}
+			BL DISPLAY
+  54:	eb00001e 	bl	d4 <DISPLAY>
+			B INC
+  58:	eafffff9 	b	44 <INC>
+
+0000005c <COUNTER>:
+
+//Increments The counter to the next
+//display bit 
+COUNTER:	CMP R0, #36 //If R0 == 9 then change R1
+  5c:	e3500024 	cmp	r0, #36	; 0x24
+			BEQ TO_ZERO
+  60:	0a000001 	beq	6c <TO_ZERO>
+			ADD R0, #4
+  64:	e2800004 	add	r0, r0, #4
+			MOV PC, LR
+  68:	e1a0f00e 	mov	pc, lr
+
+0000006c <TO_ZERO>:
+			
+TO_ZERO:	MOV R0, #0
+  6c:	e3a00000 	mov	r0, #0
+			CMP R1, #36 //If R1 == 9 then reset counter
+  70:	e3510024 	cmp	r1, #36	; 0x24
+			BEQ RESET
+  74:	0a000001 	beq	80 <RESET>
+			ADD R1, #4
+  78:	e2811004 	add	r1, r1, #4
+			MOV PC, LR
+  7c:	e1a0f00e 	mov	pc, lr
+
+00000080 <RESET>:
+			
+RESET:		MOV R1, #0
+  80:	e3a01000 	mov	r1, #0
+			MOV PC, LR
+  84:	e1a0f00e 	mov	pc, lr
+
+00000088 <DELAY>:
+
+//Creates a delay of about 0.25 seconds
+DELAY:		MOV R0, #0x3
+  88:	e3a00003 	mov	r0, #3
+			STR R9, [R8, #0x3C]		//Resets the edge capture 
+  8c:	e588903c 	str	r9, [r8, #60]	; 0x3c
+			STR R0, [R11, #0x8]		//Starts the timer
+  90:	e58b0008 	str	r0, [r11, #8]
+
+00000094 <TIMER>:
+			
+TIMER:		LDR R0, [R11, #0xC]
+  94:	e59b000c 	ldr	r0, [r11, #12]
+			LDR R1, [R8, #0x3C]
+  98:	e598103c 	ldr	r1, [r8, #60]	; 0x3c
+			CMP R1, #1
+  9c:	e3510001 	cmp	r1, #1
+			BEQ STOP		//Check for edge capture
+  a0:	0a000006 	beq	c0 <STOP>
+			CMP R0, #1
+  a4:	e3500001 	cmp	r0, #1
+			BNE TIMER		//Check if the timer is done
+  a8:	1afffff9 	bne	94 <TIMER>
+			MOV R0, #0		
+  ac:	e3a00000 	mov	r0, #0
+			STR R0, [R11, #0x8]		//Stop the timer
+  b0:	e58b0008 	str	r0, [r11, #8]
+			MOV R0, #1
+  b4:	e3a00001 	mov	r0, #1
+			STR R0, [R11, #0xC]		//Reset the F bit
+  b8:	e58b000c 	str	r0, [r11, #12]
+			MOV PC, LR
+  bc:	e1a0f00e 	mov	pc, lr
+
+000000c0 <STOP>:
+
+//Waits till the start button is pressed again
+STOP:		STR R9, [R8, #0x3C]	
+  c0:	e588903c 	str	r9, [r8, #60]	; 0x3c
+
+000000c4 <START>:
+
+START:		LDR R2, [R8, #0x3C]
+  c4:	e598203c 	ldr	r2, [r8, #60]	; 0x3c
+			CMP R2, #1
+  c8:	e3520001 	cmp	r2, #1
+			BEQ DELAY
+  cc:	0affffed 	beq	88 <DELAY>
+			B START
+  d0:	eafffffb 	b	c4 <START>
+
+000000d4 <DISPLAY>:
+
+//Displays the decimal value to the hex display
+DISPLAY:	LDR R2, [R10, R1]
+  d4:	e79a2001 	ldr	r2, [r10, r1]
+			LSL R2, #8	//Pushes the tens bit back
+  d8:	e1a02402 	lsl	r2, r2, #8
+			PUSH {R1}
+  dc:	e52d1004 	push	{r1}		; (str r1, [sp, #-4]!)
+			LDR R1, [R10, R0]
+  e0:	e79a1000 	ldr	r1, [r10, r0]
+			ADD R2, R1	//Pushes the ones bit back
+  e4:	e0822001 	add	r2, r2, r1
+			STR R2, [R8]	//Push value to hex
+  e8:	e5882000 	str	r2, [r8]
+			POP {R1}
+  ec:	e49d1004 	pop	{r1}		; (ldr r1, [sp], #4)
+			MOV PC, LR
+  f0:	e1a0f00e 	mov	pc, lr
+
+000000f4 <DISPLAY_NUMS>:
+  f4:	0000003f 	.word	0x0000003f
+  f8:	00000006 	.word	0x00000006
+  fc:	0000005b 	.word	0x0000005b
+ 100:	0000004f 	.word	0x0000004f
+ 104:	00000066 	.word	0x00000066
+ 108:	0000006d 	.word	0x0000006d
+ 10c:	0000007d 	.word	0x0000007d
+ 110:	00000007 	.word	0x00000007
+ 114:	0000007f 	.word	0x0000007f
+ 118:	00000067 	.word	0x00000067
+ 11c:	ff200020 	.word	0xff200020
+ 120:	fffec600 	.word	0xfffec600
+ 124:	02faf080 	.word	0x02faf080

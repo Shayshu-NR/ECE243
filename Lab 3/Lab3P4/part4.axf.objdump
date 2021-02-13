@@ -1,0 +1,98 @@
+
+D:/ECE243/Lab 3/Lab3P4/part4.axf:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+00000000 <__cs3_interrupt_vector>:
+/* Program that converts a binary number to decimal */
+           .text               // executable code follows
+           .global _start
+_start:
+            MOV    R4, #N
+   0:	e3a04078 	mov	r4, #120	; 0x78
+            MOV    R5, #Digits  // R5 points to the decimal digits storage location
+   4:	e3a0507c 	mov	r5, #124	; 0x7c
+            LDR    R4, [R4]     // R4 holds N
+   8:	e5944000 	ldr	r4, [r4]
+            MOV    R0, R4       // parameter for DIVIDE goes in R0
+   c:	e1a00004 	mov	r0, r4
+            BL     DIVIDE
+  10:	eb000004 	bl	28 <DIVIDE>
+			STRB   R6, [R5, #3]	
+  14:	e5c56003 	strb	r6, [r5, #3]
+			STRB   R3, [R5, #2]
+  18:	e5c53002 	strb	r3, [r5, #2]
+            STRB   R1, [R5, #1] // Tens digit is now in R1
+  1c:	e5c51001 	strb	r1, [r5, #1]
+            STRB   R0, [R5]     // Ones digit is in R0
+  20:	e5c50000 	strb	r0, [r5]
+
+00000024 <END>:
+END:        B      END
+  24:	eafffffe 	b	24 <END>
+
+00000028 <DIVIDE>:
+
+/* Subroutine to perform the integer division R0 / 10.
+ * Returns: quotient in R1, and remainder in R0
+*/
+DIVIDE:     MOV    R2, #0 //R2 is the tens bit
+  28:	e3a02000 	mov	r2, #0
+			MOV	   R3, #0 //R3 is the hundreds bit
+  2c:	e3a03000 	mov	r3, #0
+			MOV	   R6, #0 //R6 is the thousands bit
+  30:	e3a06000 	mov	r6, #0
+
+00000034 <THOUSANDS>:
+
+			
+THOUSANDS:  CMP    R0, #1000
+  34:	e3500ffa 	cmp	r0, #1000	; 0x3e8
+            BLT    HUNDREDS
+  38:	ba000002 	blt	48 <HUNDREDS>
+            SUB    R0, #1000
+  3c:	e2400ffa 	sub	r0, r0, #1000	; 0x3e8
+            ADD    R6, #1
+  40:	e2866001 	add	r6, r6, #1
+            B      THOUSANDS
+  44:	eafffffa 	b	34 <THOUSANDS>
+
+00000048 <HUNDREDS>:
+
+HUNDREDS:	CMP	   R0, #100
+  48:	e3500064 	cmp	r0, #100	; 0x64
+			BLT	   TENS
+  4c:	ba000002 	blt	5c <TENS>
+			SUB	   R0, #100
+  50:	e2400064 	sub	r0, r0, #100	; 0x64
+			ADD    R3, #1
+  54:	e2833001 	add	r3, r3, #1
+			B	   HUNDREDS
+  58:	eafffffa 	b	48 <HUNDREDS>
+
+0000005c <TENS>:
+
+TENS:		CMP	   R0, #10
+  5c:	e350000a 	cmp	r0, #10
+			BLT	   DIV_END
+  60:	ba000002 	blt	70 <DIV_END>
+			SUB	   R0, #10
+  64:	e240000a 	sub	r0, r0, #10
+			ADD    R2, #1
+  68:	e2822001 	add	r2, r2, #1
+			B	   TENS
+  6c:	eafffffa 	b	5c <TENS>
+
+00000070 <DIV_END>:
+
+DIV_END:    MOV    R1, R2     // quotient in R1 (remainder in R0)
+  70:	e1a01002 	mov	r1, r2
+            MOV    PC, LR
+  74:	e1a0f00e 	mov	pc, lr
+
+00000078 <N>:
+  78:	000023da 	.word	0x000023da
+
+0000007c <Digits>:
+  7c:	00000000 	.word	0x00000000

@@ -1,0 +1,65 @@
+
+D:/ECE243/Lab 3/Lab3P3/part3.axf:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+00000000 <__cs3_interrupt_vector>:
+/* Program that finds the largest number in a list of integers */
+.text // executable code follows 
+.global _start
+
+_start:
+		MOV R4, #RESULT  // R4 points to result location 
+   0:	e3a0403c 	mov	r4, #60	; 0x3c
+		LDR R2, [R4, #4] // R0 holds the number of elements in the list 
+   4:	e5942004 	ldr	r2, [r4, #4]
+		MOV R1, #NUMBERS // R1 points to the start of the list 
+   8:	e3a01044 	mov	r1, #68	; 0x44
+		MOV R0, #0		 //The largest number is now zero
+   c:	e3a00000 	mov	r0, #0
+		BL LARGE 		 // Start the subroutine	
+  10:	eb000001 	bl	1c <LARGE>
+		STR R0, [R4] // R0 holds the subroutine return value
+  14:	e5840000 	str	r0, [r4]
+
+00000018 <END>:
+		
+END: B END
+  18:	eafffffe 	b	18 <END>
+
+0000001c <LARGE>:
+
+// Subroutine for finding the largest number from a list of integers
+LARGE: 
+		SUBS   R2, #1	//Subtract 1 from the counter 
+  1c:	e2522001 	subs	r2, r2, #1
+		MOVEQ PC, LR	//Return back to main is the subtraction returns zero
+  20:	01a0f00e 	moveq	pc, lr
+		LDR   R3, [R1]	//Load the integer from the numbers list
+  24:	e5913000 	ldr	r3, [r1]
+		ADD	  R1, #4	//Add 4 to the pointer to the numbers list to get the next value
+  28:	e2811004 	add	r1, r1, #4
+		CMP	  R0, R3	//Compare the current largest value and a number from the list
+  2c:	e1500003 	cmp	r0, r3
+		BGE   LARGE		//If the current largest value is greater restart the loop
+  30:	aafffff9 	bge	1c <LARGE>
+		MOV   R0, R3	//Otherwise make the current largest value the value from the list
+  34:	e1a00003 	mov	r0, r3
+		B	  LARGE		//Restart the subroutine
+  38:	eafffff7 	b	1c <LARGE>
+
+0000003c <RESULT>:
+  3c:	00000000 	.word	0x00000000
+
+00000040 <N>:
+  40:	00000007 	.word	0x00000007
+
+00000044 <NUMBERS>:
+  44:	00000004 	.word	0x00000004
+  48:	00000005 	.word	0x00000005
+  4c:	00000003 	.word	0x00000003
+  50:	00000006 	.word	0x00000006
+  54:	00000001 	.word	0x00000001
+  58:	00000008 	.word	0x00000008
+  5c:	00000002 	.word	0x00000002

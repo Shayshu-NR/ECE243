@@ -1,0 +1,156 @@
+
+D:/ECE243/Lab 5/Part 2/part2.axf:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+00000000 <__cs3_interrupt_vector>:
+          .text                   // executable code follows
+          .global _start
+		  
+_start:		LDR R8, =0xFF200020		//R8 has the addres of HEX0-3
+   0:	e59f80e0 	ldr	r8, [pc, #224]	; e8 <DISPLAY_NUMS+0x28>
+			LDR	R9, =0xFFFFFFFF		//Used to reset the edge capture
+   4:	e3e09000 	mvn	r9, #0
+			STR R9, [R8, #0x3C]
+   8:	e588903c 	str	r9, [r8, #60]	; 0x3c
+			MOV R10, #DISPLAY_NUMS	//Bit codes for the hex display
+   c:	e3a0a0c0 	mov	r10, #192	; 0xc0
+			MOV R0, #0
+  10:	e3a00000 	mov	r0, #0
+			MOV R1, #0
+  14:	e3a01000 	mov	r1, #0
+
+00000018 <MAIN>:
+			
+//Increments the hex display with a start/stop button			
+MAIN:		LDR R2, [R8, #0x3C]		//Saves key value
+  18:	e598203c 	ldr	r2, [r8, #60]	; 0x3c
+			CMP R2, #0
+  1c:	e3520000 	cmp	r2, #0
+			BEQ	MAIN
+  20:	0afffffc 	beq	18 <MAIN>
+			STR R9, [R8, #0x3C]
+  24:	e588903c 	str	r9, [r8, #60]	; 0x3c
+
+00000028 <INC>:
+			
+INC:		BL COUNTER
+  28:	eb000004 	bl	40 <COUNTER>
+			PUSH {R0, R1}
+  2c:	e92d0003 	push	{r0, r1}
+			BL DELAY
+  30:	eb00000d 	bl	6c <DELAY>
+			POP {R0, R1}
+  34:	e8bd0003 	pop	{r0, r1}
+			BL DISPLAY
+  38:	eb000018 	bl	a0 <DISPLAY>
+			B INC
+  3c:	eafffff9 	b	28 <INC>
+
+00000040 <COUNTER>:
+
+//Increments The counter to the next
+//display bit 
+COUNTER:	CMP R0, #36 //If R0 == 9 then change R1
+  40:	e3500024 	cmp	r0, #36	; 0x24
+			BEQ TO_ZERO
+  44:	0a000001 	beq	50 <TO_ZERO>
+			ADD R0, #4
+  48:	e2800004 	add	r0, r0, #4
+			MOV PC, LR
+  4c:	e1a0f00e 	mov	pc, lr
+
+00000050 <TO_ZERO>:
+			
+TO_ZERO:	MOV R0, #0
+  50:	e3a00000 	mov	r0, #0
+			CMP R1, #36 //If R1 == 9 then reset counter
+  54:	e3510024 	cmp	r1, #36	; 0x24
+			BEQ RESET
+  58:	0a000001 	beq	64 <RESET>
+			ADD R1, #4
+  5c:	e2811004 	add	r1, r1, #4
+			MOV PC, LR
+  60:	e1a0f00e 	mov	pc, lr
+
+00000064 <RESET>:
+			
+RESET:		MOV R1, #0
+  64:	e3a01000 	mov	r1, #0
+			MOV PC, LR
+  68:	e1a0f00e 	mov	pc, lr
+
+0000006c <DELAY>:
+
+//Creates a delay of about 0.25 seconds
+DELAY:		STR R9, [R8, #0x3C]
+  6c:	e588903c 	str	r9, [r8, #60]	; 0x3c
+			LDR R0, =2000000
+  70:	e59f0074 	ldr	r0, [pc, #116]	; ec <DISPLAY_NUMS+0x2c>
+
+00000074 <SUB_LOOP>:
+			
+SUB_LOOP:	LDR R2, [R8, #0x3C]
+  74:	e598203c 	ldr	r2, [r8, #60]	; 0x3c
+			CMP R2, #1
+  78:	e3520001 	cmp	r2, #1
+			BEQ STOP		//Branches when button is pressed
+  7c:	0a000002 	beq	8c <STOP>
+			SUBS R0, #1
+  80:	e2500001 	subs	r0, r0, #1
+			BNE SUB_LOOP
+  84:	1afffffa 	bne	74 <SUB_LOOP>
+			MOV PC, LR
+  88:	e1a0f00e 	mov	pc, lr
+
+0000008c <STOP>:
+
+//Waits till the start button is pressed again
+STOP:		STR R9, [R8, #0x3C]	
+  8c:	e588903c 	str	r9, [r8, #60]	; 0x3c
+
+00000090 <START>:
+
+START:		LDR R2, [R8, #0x3C]
+  90:	e598203c 	ldr	r2, [r8, #60]	; 0x3c
+			CMP R2, #1
+  94:	e3520001 	cmp	r2, #1
+			BEQ DELAY
+  98:	0afffff3 	beq	6c <DELAY>
+			B START
+  9c:	eafffffb 	b	90 <START>
+
+000000a0 <DISPLAY>:
+
+//Displays the decimal value to the hex display
+DISPLAY:	LDR R2, [R10, R1]
+  a0:	e79a2001 	ldr	r2, [r10, r1]
+			LSL R2, #8
+  a4:	e1a02402 	lsl	r2, r2, #8
+			PUSH {R1}
+  a8:	e52d1004 	push	{r1}		; (str r1, [sp, #-4]!)
+			LDR R1, [R10, R0]
+  ac:	e79a1000 	ldr	r1, [r10, r0]
+			ADD R2, R1
+  b0:	e0822001 	add	r2, r2, r1
+			STR R2, [R8]
+  b4:	e5882000 	str	r2, [r8]
+			POP {R1}
+  b8:	e49d1004 	pop	{r1}		; (ldr r1, [sp], #4)
+			MOV PC, LR
+  bc:	e1a0f00e 	mov	pc, lr
+
+000000c0 <DISPLAY_NUMS>:
+  c0:	0000003f 	.word	0x0000003f
+  c4:	00000006 	.word	0x00000006
+  c8:	0000005b 	.word	0x0000005b
+  cc:	0000004f 	.word	0x0000004f
+  d0:	00000066 	.word	0x00000066
+  d4:	0000006d 	.word	0x0000006d
+  d8:	0000007d 	.word	0x0000007d
+  dc:	00000007 	.word	0x00000007
+  e0:	0000007f 	.word	0x0000007f
+  e4:	00000067 	.word	0x00000067
+  e8:	ff200020 	.word	0xff200020
+  ec:	001e8480 	.word	0x001e8480
